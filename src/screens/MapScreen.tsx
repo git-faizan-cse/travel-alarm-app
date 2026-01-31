@@ -1,20 +1,24 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Button } from "react-native";
 import MapView, { Marker, MapPressEvent } from "react-native-maps";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
+import { Coordinates } from "../types/location";
 
 export default function MapScreen() {
   const navigation = useNavigation<any>();
-  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Coordinates | null>(
+    null,
+  );
 
   const handlePress = (event: MapPressEvent) => {
-    const coords = event.nativeEvent.coordinate;
+    setSelectedLocation(event.nativeEvent.coordinate);
+  };
 
-    setSelectedLocation(coords);
+  const confirmSelection = () => {
+    if (!selectedLocation) return;
 
-    // send destination back
     navigation.navigate("Home", {
-      destination: coords,
+      destination: selectedLocation,
     });
   };
 
@@ -23,6 +27,12 @@ export default function MapScreen() {
       <MapView style={styles.map} showsUserLocation onPress={handlePress}>
         {selectedLocation && <Marker coordinate={selectedLocation} />}
       </MapView>
+
+      {selectedLocation && (
+        <View style={styles.buttonContainer}>
+          <Button title="Confirm Destination" onPress={confirmSelection} />
+        </View>
+      )}
     </View>
   );
 }
@@ -30,4 +40,11 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+
+  buttonContainer: {
+    position: "absolute",
+    bottom: 40,
+    alignSelf: "center",
+    width: "80%",
+  },
 });
