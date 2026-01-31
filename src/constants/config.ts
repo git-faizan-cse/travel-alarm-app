@@ -3,4 +3,4 @@
 //   longitude: 76.7794,
 // };
 
-export const ALERT_DISTANCE = 0.5;
+// export const ALERT_DISTANCE = 0.5;

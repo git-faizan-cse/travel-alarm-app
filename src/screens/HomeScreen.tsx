@@ -4,11 +4,13 @@ import { View, Text, StyleSheet } from "react-native";
 import { startLocationTracking } from "../services/LocationService";
 import { triggerAlarm } from "../services/AlarmService";
 import { getDistance } from "../utils/distance";
-import { ALERT_DISTANCE } from "../constants/config";
+import { TextInput } from "react-native";
+// import { ALERT_DISTANCE } from "../constants/config";
 import { Coordinates } from "../types/location";
 import { Button } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
 import {
   startBackgroundTracking,
   setBackgroundCallback,
@@ -18,6 +20,7 @@ export default function HomeScreen() {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [alarmTriggered, setAlarmTriggered] = useState(false);
+  const [alertDistance, setAlertDistance] = useState("0.5");
 
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -52,42 +55,56 @@ export default function HomeScreen() {
       destination.longitude,
     );
 
-    if (distance <= ALERT_DISTANCE) {
+    if (distance <= Number(alertDistance)) {
       setAlarmTriggered(true);
       triggerAlarm();
     }
   }, [location, destination]);
 
   return (
-    <View style={styles.container}>
-      {errorMsg && <Text>{errorMsg}</Text>}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        {errorMsg && <Text>{errorMsg}</Text>}
 
-      {location ? (
-        <>
-          <Text>Latitude: {location.latitude}</Text>
-          <Text>Longitude: {location.longitude}</Text>
+        {location ? (
+          <>
+            <Text>Latitude: {location.latitude}</Text>
+            <Text>Longitude: {location.longitude}</Text>
 
-          {!destination && <Text>Select a destination from map 👇</Text>}
+            {!destination && <Text>Select a destination from map 👇</Text>}
 
-          {destination && (
-            <Text style={styles.distance}>
-              Distance:{" "}
-              {getDistance(
-                location.latitude,
-                location.longitude,
-                destination.latitude,
-                destination.longitude,
-              ).toFixed(2)}{" "}
-              km
-            </Text>
-          )}
-        </>
-      ) : (
-        <Text>Getting location...</Text>
-      )}
+            {destination && (
+              <Text style={styles.distance}>
+                Distance:{" "}
+                {getDistance(
+                  location.latitude,
+                  location.longitude,
+                  destination.latitude,
+                  destination.longitude,
+                ).toFixed(2)}{" "}
+                km
+              </Text>
+            )}
 
-      <Button title="Open Map" onPress={() => navigation.navigate("Map")} />
-    </View>
+            <View style={styles.inputRow}>
+              <Text>Alert before (km): </Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                value={alertDistance}
+                onChangeText={setAlertDistance}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="done"
+              />
+            </View>
+          </>
+        ) : (
+          <Text>Getting location...</Text>
+        )}
+
+        <Button title="Open Map" onPress={() => navigation.navigate("Map")} />
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -101,5 +118,19 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 16,
     fontWeight: "bold",
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    width: 60,
+    padding: 5,
+    marginLeft: 8,
+    textAlign: "center",
   },
 });
