@@ -64,45 +64,58 @@ export default function HomeScreen() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        {errorMsg && <Text>{errorMsg}</Text>}
+        <Text style={styles.header}>📍 Travel Alarm</Text>
 
-        {location ? (
-          <>
-            <Text>Latitude: {location.latitude}</Text>
-            <Text>Longitude: {location.longitude}</Text>
+        {/* Info Card */}
+        <View style={styles.card}>
+          {location ? (
+            <>
+              <Text style={styles.label}>Latitude</Text>
+              <Text style={styles.value}>{location.latitude.toFixed(4)}</Text>
 
-            {!destination && <Text>Select a destination from map 👇</Text>}
+              <Text style={styles.label}>Longitude</Text>
+              <Text style={styles.value}>{location.longitude.toFixed(4)}</Text>
 
-            {destination && (
-              <Text style={styles.distance}>
-                Distance:{" "}
-                {getDistance(
-                  location.latitude,
-                  location.longitude,
-                  destination.latitude,
-                  destination.longitude,
-                ).toFixed(2)}{" "}
-                km
-              </Text>
-            )}
+              {destination && (
+                <>
+                  <Text style={styles.label}>Distance</Text>
+                  <Text style={styles.distanceValue}>
+                    {getDistance(
+                      location.latitude,
+                      location.longitude,
+                      destination.latitude,
+                      destination.longitude,
+                    ).toFixed(2)}{" "}
+                    km
+                  </Text>
+                </>
+              )}
+            </>
+          ) : (
+            <Text>Getting location...</Text>
+          )}
+        </View>
 
-            <View style={styles.inputRow}>
-              <Text>Alert before (km): </Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                value={alertDistance}
-                onChangeText={setAlertDistance}
-                onSubmitEditing={Keyboard.dismiss}
-                returnKeyType="done"
-              />
-            </View>
-          </>
-        ) : (
-          <Text>Getting location...</Text>
-        )}
+        {/* Alert Distance Input */}
+        <View style={styles.inputRow}>
+          <Text style={styles.inputLabel}>Alert before (km)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={alertDistance}
+            onChangeText={setAlertDistance}
+            onSubmitEditing={Keyboard.dismiss}
+            returnKeyType="done"
+          />
+        </View>
 
-        <Button title="Open Map" onPress={() => navigation.navigate("Map")} />
+        {/* Button */}
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="Select Destination on Map"
+            onPress={() => navigation.navigate("Map")}
+          />
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -111,26 +124,67 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f5f6fa",
+    padding: 20,
     justifyContent: "center",
-    alignItems: "center",
   },
-  distance: {
-    marginTop: 20,
-    fontSize: 16,
+
+  header: {
+    fontSize: 26,
     fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 30,
   },
+
+  card: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 15,
+    elevation: 4,
+    marginBottom: 25,
+  },
+
+  label: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: 10,
+  },
+
+  value: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+
+  distanceValue: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#2e86de",
+    marginTop: 5,
+  },
+
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
+    justifyContent: "space-between",
+    marginBottom: 25,
+  },
+
+  inputLabel: {
+    fontSize: 16,
   },
 
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    width: 60,
-    padding: 5,
-    marginLeft: 8,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    width: 80,
+    padding: 8,
     textAlign: "center",
+    backgroundColor: "#fff",
+  },
+
+  buttonWrapper: {
+    borderRadius: 10,
+    overflow: "hidden",
   },
 });
