@@ -9,6 +9,10 @@ import { Coordinates } from "../types/location";
 import { Button } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
+import {
+  startBackgroundTracking,
+  setBackgroundCallback,
+} from "../services/BackgroundLocationService";
 
 export default function HomeScreen() {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -23,6 +27,10 @@ export default function HomeScreen() {
   // start tracking
   useEffect(() => {
     startLocationTracking(setLocation, setErrorMsg);
+
+    // 🔥 background tracking
+    setBackgroundCallback(setLocation);
+    startBackgroundTracking();
   }, []);
 
   // receive destination from map
