@@ -15,17 +15,32 @@ import {
   startBackgroundTracking,
   setBackgroundCallback,
 } from "../services/BackgroundLocationService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomeScreen() {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [alarmTriggered, setAlarmTriggered] = useState(false);
-  const [alertDistance, setAlertDistance] = useState("0.5");
+  const [alertDistance, setAlertDistance] = useState("");
 
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
   const [destination, setDestination] = useState<Coordinates | null>(null);
+
+  useEffect(() => {
+    const loadDistance = async () => {
+      const saved = await AsyncStorage.getItem("ALERT_DISTANCE");
+
+      if (saved) {
+        setAlertDistance(saved);
+      } else {
+        setAlertDistance("0.5"); // default only first time
+      }
+    };
+
+    loadDistance();
+  }, []);
 
   // start tracking
   useEffect(() => {
@@ -66,6 +81,22 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <Text style={styles.header}>📍 Travel Alarm</Text>
 
+        {/* Alert Distance Input */}
+        <View style={styles.inputRow}>
+          <Text style={styles.inputLabel}>Alert before (km)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={alertDistance}
+            onChangeText={async (value) => {
+              setAlertDistance(value);
+              await AsyncStorage.setItem("ALERT_DISTANCE", value);
+            }}
+            onSubmitEditing={Keyboard.dismiss}
+            returnKeyType="done"
+          />
+        </View>
+
         {/* Info Card */}
         <View style={styles.card}>
           {location ? (
@@ -94,19 +125,6 @@ export default function HomeScreen() {
           ) : (
             <Text>Getting location...</Text>
           )}
-        </View>
-
-        {/* Alert Distance Input */}
-        <View style={styles.inputRow}>
-          <Text style={styles.inputLabel}>Alert before (km)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={alertDistance}
-            onChangeText={setAlertDistance}
-            onSubmitEditing={Keyboard.dismiss}
-            returnKeyType="done"
-          />
         </View>
 
         {/* Button */}
