@@ -5,10 +5,15 @@ let sound: Audio.Sound | null = null;
 
 export const triggerAlarm = async () => {
   try {
-    // vibrate
-    Vibration.vibrate([500, 500, 500, 500]);
+    await Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: true,
+      shouldDuckAndroid: false,
+      playThroughEarpieceAndroid: false,
+    });
 
-    // load sound
+    Vibration.vibrate([500, 500, 500, 500], true);
+
     const { sound: playback } = await Audio.Sound.createAsync(
       require("../../assets/sounds/alarm.mp3"),
       { shouldPlay: true, isLooping: true },
@@ -16,14 +21,11 @@ export const triggerAlarm = async () => {
 
     sound = playback;
 
-    Alert.alert("🚨 You are near your destination!", "Tap OK to stop alarm", [
-      {
-        text: "Stop",
-        onPress: stopAlarm,
-      },
+    Alert.alert("🚨 You are near your destination!", "Tap Stop", [
+      { text: "Stop", onPress: stopAlarm },
     ]);
   } catch (e) {
-    console.log("Alarm error:", e);
+    console.log(e);
   }
 };
 
