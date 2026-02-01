@@ -1,26 +1,44 @@
 import { StyleSheet, View } from "react-native";
 import MapView, { Marker, Circle } from "react-native-maps";
-import { useRoute, useNavigation } from "@react-navigation/native";
+import { getDestination } from "../services/TrackingService";
 import { Surface, Text, Button } from "react-native-paper";
+import { useEffect, useState } from "react";
 
 import Footer from "../components/Footer";
 import { Coordinates } from "../types/location";
-import { useEffect, useState } from "react";
-import { startLocationTracking } from "../services/LocationService";
 import { getDistance } from "../utils/distance";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import {
+  startTracking,
+  stopTracking,
+  getTrackingStatus,
+  addLocationListener,
+  addTrackingStatusListener,
+} from "../services/TrackingService";
+import { useRef } from "react";
 
 export default function TrackingScreen() {
-  const route = useRoute<any>();
-  const navigation = useNavigation<any>();
+  const destination = getDestination();
 
-  const destination: Coordinates | null = route.params?.destination ?? null;
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
+  const [isTracking, setIsTracking] = useState(getTrackingStatus());
+  const [alertDistance, setAlertDistance] = useState("");
 
   useEffect(() => {
-    startLocationTracking(setLocation, () => {});
+    const unsubscribe = addLocationListener(setLocation);
+
+    return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = addTrackingStatusListener(setIsTracking);
+
+    return unsubscribe;
+  }, []);
+
+  /* ---------- calculate distance ---------- */
   useEffect(() => {
     if (!location || !destination) return;
 
@@ -32,7 +50,27 @@ export default function TrackingScreen() {
     );
 
     setDistance(d);
-  }, [location]);
+  }, [location, destination]);
+
+  /* ---------- LOAD ALERT DISTANCE ---------- */
+  useEffect(() => {
+    const loadDistance = async () => {
+      const saved = await AsyncStorage.getItem("ALERT_DISTANCE");
+      setAlertDistance(saved || "0.5");
+    };
+
+    loadDistance();
+  }, []);
+
+  /* ---------- start/stop toggle ---------- */
+  const toggleTracking = async () => {
+    if (isTracking) {
+      stopTracking();
+      setDistance(null);
+    } else {
+      await startTracking();
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -42,7 +80,6 @@ export default function TrackingScreen() {
           <>
             <Marker coordinate={destination} />
 
-            {/* radius placeholder (static for now) */}
             <Circle
               center={destination}
               radius={500}
@@ -54,58 +91,50 @@ export default function TrackingScreen() {
         )}
       </MapView>
 
-      {/* 🔥 Floating Tracking Card */}
+      {/* 🔥 Floating Card */}
       <Surface style={styles.card} elevation={8}>
-        <Text style={styles.title}>📍 Tracking Active</Text>
+        <Text style={styles.title}>📍 Tracking</Text>
 
         <Text style={styles.sub}>Distance Remaining</Text>
 
         <Text style={styles.distance}>
-          {distance ? distance.toFixed(2) + " km" : "--"}
+          {distance !== null ? distance.toFixed(2) + " km" : "--"}
         </Text>
 
         <Button
           mode="contained"
+          buttonColor={isTracking ? "#d32f2f" : "#2e7d32"}
           style={{ marginTop: 12 }}
-          onPress={() => navigation.navigate("Home")}
+          onPress={toggleTracking}
         >
-          Stop Tracking
+          {isTracking ? "Stop Tracking" : "Start Tracking"}
         </Button>
       </Surface>
 
-      {/* Footer */}
-      <Footer />
+      {/* <Footer /> */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  map: { flex: 1 },
 
-  map: {
-    flex: 1,
-  },
-
-  /* Floating info card */
   card: {
     position: "absolute",
-    bottom: 120, // above footer
+    bottom: 120,
     alignSelf: "center",
     width: "90%",
-
     padding: 16,
     borderRadius: 18,
-
     backgroundColor: "rgba(255,255,255,0.95)",
   },
 
   title: {
     fontWeight: "bold",
     fontSize: 16,
-    marginBottom: 6,
   },
+
   sub: {
     marginTop: 6,
     fontSize: 12,

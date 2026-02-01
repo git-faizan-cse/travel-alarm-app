@@ -4,12 +4,6 @@ import { Button } from "react-native-paper";
 
 import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import { startLocationTracking } from "../services/LocationService";
-import {
-  startBackgroundTracking,
-  setBackgroundCallback,
-} from "../services/BackgroundLocationService";
 import { triggerAlarm } from "../services/AlarmService";
 import { getDistance } from "../utils/distance";
 
@@ -18,18 +12,104 @@ import { Coordinates } from "../types/location";
 import Layout from "../components/Layout";
 import DistanceInput from "../components/DistanceInput";
 import InfoCard from "../components/InfoCard";
+import {
+  startTracking,
+  stopTracking,
+  getTrackingStatus,
+  addLocationListener,
+  addTrackingStatusListener,
+} from "../services/TrackingService";
+import { setDestination, getDestination } from "../services/TrackingService";
+import * as Location from "expo-location";
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
   const [location, setLocation] = useState<Coordinates | null>(null);
-  const [destination, setDestination] = useState<Coordinates | null>(null);
+  const [destination, setDestinationState] = useState(getDestination());
 
   const [alertDistance, setAlertDistance] = useState("");
   const [alarmTriggered, setAlarmTriggered] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState("");
+  const [isTracking, setIsTracking] = useState(getTrackingStatus());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDestinationState(getDestination());
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ---------- RESET ALARM WHEN TRACKING CHANGES ---------- */
+  useEffect(() => {
+    const unsubscribe = addLocationListener(setLocation);
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = addTrackingStatusListener(setIsTracking);
+
+    return unsubscribe;
+  }, []);
+
+  /* ------------------ LIGHTWEIGHT LIVE LOCATION (Home only) ------------------ */
+
+  useEffect(() => {
+    let subscription: Location.LocationSubscription;
+
+    const startLightTracking = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+
+      subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Low, // ⭐ lighter than Balanced
+          timeInterval: 3000, // faster refresh
+          distanceInterval: 3, // update even small moves
+        },
+        (loc) => {
+          setLocation(loc.coords);
+        },
+      );
+    };
+
+    startLightTracking();
+
+    return () => subscription?.remove();
+  }, []);
+
+  // useEffect(() => {
+  //   let subscription: Location.LocationSubscription;
+
+  //   const startLightTracking = async () => {
+  //     const { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== "granted") return;
+
+  //     subscription = await Location.watchPositionAsync(
+  //       {
+  //         accuracy: Location.Accuracy.Balanced, // ⭐ low battery
+  //         timeInterval: 10000, // every 10s
+  //         distanceInterval: 20, // or 20m
+  //       },
+  //       (loc) => {
+  //         // ONLY update if not tracking
+  //         if (!getTrackingStatus()) {
+  //           setLocation(loc.coords);
+  //         }
+  //       },
+  //     );
+  //   };
+
+  //   startLightTracking();
+
+  //   return () => {
+  //     subscription?.remove();
+  //   };
+  // }, []);
 
   /* ------------------ LOAD SAVED DISTANCE ------------------ */
   useEffect(() => {
@@ -40,22 +120,6 @@ export default function HomeScreen() {
 
     loadDistance();
   }, []);
-
-  /* ------------------ LOCATION TRACKING ------------------ */
-  useEffect(() => {
-    startLocationTracking(setLocation, setErrorMsg);
-
-    setBackgroundCallback(setLocation);
-    startBackgroundTracking();
-  }, []);
-
-  /* ------------------ GET DESTINATION FROM MAP ------------------ */
-  useEffect(() => {
-    if (route.params?.destination) {
-      setDestination(route.params.destination);
-      setAlarmTriggered(false);
-    }
-  }, [route.params]);
 
   /* ------------------ ALARM LOGIC ------------------ */
   useEffect(() => {
@@ -74,6 +138,16 @@ export default function HomeScreen() {
     }
   }, [location, destination]);
 
+  const toggleTracking = async () => {
+    if (isTracking) {
+      stopTracking();
+      setAlarmTriggered(false);
+    } else {
+      setAlarmTriggered(false);
+      await startTracking();
+    }
+  };
+
   /* ------------------ UI ------------------ */
   return (
     <Layout>
@@ -88,8 +162,21 @@ export default function HomeScreen() {
           errorMsg={errorMsg}
         />
 
-        <Button mode="contained" onPress={() => navigation.navigate("Map")}>
-          Select Destination on Map
+        <Button
+          mode="contained"
+          disabled={isTracking} // 🔒 lock while tracking
+          onPress={() => navigation.navigate("Map")}
+        >
+          Select Destination
+        </Button>
+        <Button
+          mode="contained"
+          buttonColor={isTracking ? "#d32f2f" : "#2e7d32"}
+          style={{ marginTop: 10 }}
+          disabled={!destination}
+          onPress={toggleTracking}
+        >
+          {isTracking ? "Stop Tracking" : "Start Tracking"}
         </Button>
       </View>
     </Layout>

@@ -1,17 +1,12 @@
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { IconButton } from "react-native-paper";
 
 import HomeScreen from "../screens/HomeScreen";
 import TrackingScreen from "../screens/TrackingScreen";
-import MapScreen from "../screens/MapScreen";
 
-const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-/* ------------------ Bottom Tabs ------------------ */
-function TabNavigator() {
+export default function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -43,20 +38,5 @@ function TabNavigator() {
         }}
       />
     </Tab.Navigator>
-  );
-}
-
-/* ------------------ Root Navigator ------------------ */
-export default function AppNavigator() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* Tabs stay alive */}
-        <Stack.Screen name="MainTabs" component={TabNavigator} />
-
-        {/* Map opens above tabs */}
-        <Stack.Screen name="Map" component={MapScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
   );
 }

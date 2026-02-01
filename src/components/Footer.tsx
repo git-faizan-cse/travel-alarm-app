@@ -10,7 +10,7 @@ export default function Footer() {
 
   return (
     <Surface style={styles.footer} elevation={10}>
-      {/* Home */}
+      {/* 🏠 Home */}
       <IconButton
         icon="home-variant"
         size={26}
@@ -18,12 +18,12 @@ export default function Footer() {
         onPress={() => navigation.navigate("Home")}
       />
 
-      {/* Map */}
+      {/* 📍 Tracking */}
       <IconButton
-        icon="map-search"
+        icon="crosshairs-gps"
         size={26}
-        iconColor={current === "Map" ? "#1976D2" : "#666"}
-        onPress={() => navigation.navigate("Map")}
+        iconColor={current === "Tracking" ? "#1976D2" : "#666"}
+        onPress={() => navigation.navigate("Tracking")}
       />
     </Surface>
   );

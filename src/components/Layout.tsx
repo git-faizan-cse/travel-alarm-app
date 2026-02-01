@@ -40,7 +40,7 @@ export default function Layout({ children }: Props) {
         <View style={styles.content}>{children}</View>
 
         {/* 🔥 Footer */}
-        <Footer />
+        {/* <Footer /> */}
       </ImageBackground>
     </Pressable>
   );

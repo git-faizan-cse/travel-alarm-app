@@ -7,6 +7,7 @@ import { Button, Surface } from "react-native-paper";
 
 import Footer from "../components/Footer";
 import { Coordinates } from "../types/location";
+import { setDestination } from "../services/TrackingService";
 
 export default function MapScreen() {
   const navigation = useNavigation<any>();
@@ -21,9 +22,8 @@ export default function MapScreen() {
   const confirmSelection = () => {
     if (!selectedLocation) return;
 
-    navigation.navigate("Tracking", {
-      destination: selectedLocation,
-    });
+    setDestination(selectedLocation); // ⭐ save globally
+    navigation.goBack(); // ⭐ close map
   };
 
   const [alertDistance, setAlertDistance] = useState(0.5);
@@ -71,7 +71,7 @@ export default function MapScreen() {
       )}
 
       {/* Footer stays */}
-      <Footer />
+      {/* <Footer /> */}
     </View>
   );
 }
