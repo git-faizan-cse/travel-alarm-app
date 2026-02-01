@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
-import MapView, { Marker, MapPressEvent } from "react-native-maps";
-import { useState } from "react";
+import MapView, { Marker, Circle, MapPressEvent } from "react-native-maps";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Button, Surface } from "react-native-paper";
 
@@ -25,11 +26,34 @@ export default function MapScreen() {
     });
   };
 
+  const [alertDistance, setAlertDistance] = useState(0.5);
+
+  useEffect(() => {
+    const loadDistance = async () => {
+      const saved = await AsyncStorage.getItem("ALERT_DISTANCE");
+      setAlertDistance(Number(saved || 0.5));
+    };
+
+    loadDistance();
+  }, []);
+
   return (
     <View style={styles.container}>
       {/* Fullscreen Map */}
       <MapView style={styles.map} showsUserLocation onPress={handlePress}>
-        {selectedLocation && <Marker coordinate={selectedLocation} />}
+        {selectedLocation && (
+          <>
+            <Marker coordinate={selectedLocation} />
+
+            <Circle
+              center={selectedLocation}
+              radius={alertDistance * 1000}
+              strokeColor="#2e86de"
+              strokeWidth={2}
+              fillColor="rgba(46,134,222,0.15)"
+            />
+          </>
+        )}
       </MapView>
 
       {/* 🔥 Floating Confirm Button */}
