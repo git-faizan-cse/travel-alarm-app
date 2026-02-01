@@ -3,6 +3,7 @@ import MapView, { Marker, MapPressEvent } from "react-native-maps";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Coordinates } from "../types/location";
+import Footer from "../components/Footer";
 
 export default function MapScreen() {
   const navigation = useNavigation<any>();
@@ -33,6 +34,8 @@ export default function MapScreen() {
           <Button title="Confirm Destination" onPress={confirmSelection} />
         </View>
       )}
+
+      <Footer />
     </View>
   );
 }
