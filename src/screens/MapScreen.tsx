@@ -1,9 +1,11 @@
-import { StyleSheet, View, Button } from "react-native";
+import { StyleSheet, View } from "react-native";
 import MapView, { Marker, MapPressEvent } from "react-native-maps";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { Coordinates } from "../types/location";
+import { Button, Surface } from "react-native-paper";
+
 import Footer from "../components/Footer";
+import { Coordinates } from "../types/location";
 
 export default function MapScreen() {
   const navigation = useNavigation<any>();
@@ -25,16 +27,26 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Fullscreen Map */}
       <MapView style={styles.map} showsUserLocation onPress={handlePress}>
         {selectedLocation && <Marker coordinate={selectedLocation} />}
       </MapView>
 
+      {/* 🔥 Floating Confirm Button */}
       {selectedLocation && (
-        <View style={styles.buttonContainer}>
-          <Button title="Confirm Destination" onPress={confirmSelection} />
-        </View>
+        <Surface style={styles.confirmWrapper} elevation={8}>
+          <Button
+            mode="contained"
+            icon="check"
+            onPress={confirmSelection}
+            contentStyle={{ height: 50 }}
+          >
+            Confirm Destination
+          </Button>
+        </Surface>
       )}
 
+      {/* Footer stays */}
       <Footer />
     </View>
   );
@@ -42,12 +54,14 @@ export default function MapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+
   map: { flex: 1 },
 
-  buttonContainer: {
+  confirmWrapper: {
     position: "absolute",
-    bottom: 40,
+    bottom: 130, // above footer
     alignSelf: "center",
-    width: "80%",
+    width: "85%",
+    borderRadius: 24,
   },
 });
