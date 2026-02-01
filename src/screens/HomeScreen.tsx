@@ -1,57 +1,59 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Keyboard, ImageBackground, View } from "react-native";
+
+import {
+  Surface,
+  IconButton,
+  Text,
+  Card,
+  Button,
+  TextInput as PaperInput,
+} from "react-native-paper";
+
+import { useNavigation, useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { startLocationTracking } from "../services/LocationService";
-import { triggerAlarm } from "../services/AlarmService";
-import { getDistance } from "../utils/distance";
-import { TextInput } from "react-native";
-// import { ALERT_DISTANCE } from "../constants/config";
-import { Coordinates } from "../types/location";
-import { Button } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useRoute } from "@react-navigation/native";
-import { Keyboard, TouchableWithoutFeedback } from "react-native";
 import {
   startBackgroundTracking,
   setBackgroundCallback,
 } from "../services/BackgroundLocationService";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { triggerAlarm } from "../services/AlarmService";
+import { getDistance } from "../utils/distance";
+import { Coordinates } from "../types/location";
+import { Pressable } from "react-native";
 
 export default function HomeScreen() {
-  const [location, setLocation] = useState<Coordinates | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [alarmTriggered, setAlarmTriggered] = useState(false);
-  const [alertDistance, setAlertDistance] = useState("");
-
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
+  const [location, setLocation] = useState<Coordinates | null>(null);
   const [destination, setDestination] = useState<Coordinates | null>(null);
 
+  const [alertDistance, setAlertDistance] = useState("");
+  const [alarmTriggered, setAlarmTriggered] = useState(false);
+
+  const [errorMsg, setErrorMsg] = useState("");
+
+  /* ------------------ LOAD SAVED DISTANCE ------------------ */
   useEffect(() => {
     const loadDistance = async () => {
       const saved = await AsyncStorage.getItem("ALERT_DISTANCE");
-
-      if (saved) {
-        setAlertDistance(saved);
-      } else {
-        setAlertDistance("0.5"); // default only first time
-      }
+      setAlertDistance(saved || "0.5");
     };
 
     loadDistance();
   }, []);
 
-  // start tracking
+  /* ------------------ LOCATION TRACKING ------------------ */
   useEffect(() => {
     startLocationTracking(setLocation, setErrorMsg);
 
-    // 🔥 background tracking
     setBackgroundCallback(setLocation);
     startBackgroundTracking();
   }, []);
 
-  // receive destination from map
+  /* ------------------ GET DESTINATION FROM MAP ------------------ */
   useEffect(() => {
     if (route.params?.destination) {
       setDestination(route.params.destination);
@@ -59,7 +61,7 @@ export default function HomeScreen() {
     }
   }, [route.params]);
 
-  // alarm logic
+  /* ------------------ ALARM LOGIC ------------------ */
   useEffect(() => {
     if (!location || !destination || alarmTriggered) return;
 
@@ -76,90 +78,168 @@ export default function HomeScreen() {
     }
   }, [location, destination]);
 
+  /* ------------------ UI ------------------ */
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <Text style={styles.header}>📍 Travel Alarm</Text>
+    <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss}>
+      <ImageBackground
+        source={require("../../assets/images/bg.png")}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+      >
+        {/* 🔥 Floating Header */}
+        <Surface style={styles.floatingHeader} elevation={4}>
+          <Text style={styles.headerTitle}>📍 Travel Alarm</Text>
 
-        {/* Alert Distance Input */}
-        <View style={styles.inputRow}>
-          <Text style={styles.inputLabel}>Alert before (km)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={alertDistance}
-            onChangeText={async (value) => {
-              setAlertDistance(value);
-              await AsyncStorage.setItem("ALERT_DISTANCE", value);
-            }}
-            onSubmitEditing={Keyboard.dismiss}
-            returnKeyType="done"
-          />
-        </View>
-
-        {/* Info Card */}
-        <View style={styles.card}>
-          {location ? (
-            <>
-              <Text style={styles.label}>Latitude</Text>
-              <Text style={styles.value}>{location.latitude.toFixed(4)}</Text>
-
-              <Text style={styles.label}>Longitude</Text>
-              <Text style={styles.value}>{location.longitude.toFixed(4)}</Text>
-
-              {destination && (
-                <>
-                  <Text style={styles.label}>Distance</Text>
-                  <Text style={styles.distanceValue}>
-                    {getDistance(
-                      location.latitude,
-                      location.longitude,
-                      destination.latitude,
-                      destination.longitude,
-                    ).toFixed(2)}{" "}
-                    km
-                  </Text>
-                </>
-              )}
-            </>
-          ) : (
-            <Text>Getting location...</Text>
-          )}
-        </View>
-
-        {/* Button */}
-        <View style={styles.buttonWrapper}>
-          <Button
-            title="Select Destination on Map"
+          <IconButton
+            icon="crosshairs-gps"
+            size={24}
             onPress={() => navigation.navigate("Map")}
           />
-        </View>
-      </View>
-    </TouchableWithoutFeedback>
+        </Surface>
+
+        {/* 🔥 Main Content */}
+        <Surface style={styles.container} elevation={0}>
+          <View style={styles.contentCenter}>
+            {/* Distance Input */}
+            <Text style={styles.inputLabel}>Alert Distance (km)</Text>
+
+            <PaperInput
+              mode="outlined"
+              style={{ width: "85%", alignSelf: "center" }}
+              keyboardType="numeric"
+              value={alertDistance}
+              onChangeText={async (value) => {
+                setAlertDistance(value);
+                await AsyncStorage.setItem("ALERT_DISTANCE", value);
+              }}
+            />
+
+            {/* Info Card */}
+            <Card style={styles.card}>
+              <Card.Content>
+                {location ? (
+                  <>
+                    <Text style={styles.label}>Latitude</Text>
+                    <Text style={styles.value}>
+                      {location.latitude.toFixed(4)}
+                    </Text>
+
+                    <Text style={styles.label}>Longitude</Text>
+                    <Text style={styles.value}>
+                      {location.longitude.toFixed(4)}
+                    </Text>
+
+                    {destination && (
+                      <>
+                        <Text style={styles.label}>Distance</Text>
+                        <Text style={styles.distanceValue}>
+                          {getDistance(
+                            location.latitude,
+                            location.longitude,
+                            destination.latitude,
+                            destination.longitude,
+                          ).toFixed(2)}{" "}
+                          km
+                        </Text>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Text>Getting location...</Text>
+                )}
+
+                {errorMsg ? <Text>{errorMsg}</Text> : null}
+              </Card.Content>
+            </Card>
+
+            {/* Button */}
+            <Button mode="contained" onPress={() => navigation.navigate("Map")}>
+              Select Destination on Map
+            </Button>
+          </View>
+        </Surface>
+
+        {/* 🔥 Footer */}
+        <Surface style={styles.footer} elevation={6}>
+          <IconButton
+            icon="crosshairs-gps"
+            onPress={() => navigation.navigate("Map")}
+          />
+
+          <IconButton
+            icon="cog-outline"
+            onPress={() => console.log("Settings later")}
+          />
+        </Surface>
+      </ImageBackground>
+    </Pressable>
   );
 }
+
+/* ------------------ STYLES ------------------ */
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f6fa",
-    padding: 20,
-    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingBottom: 90,
+
+    justifyContent: "center", // ⭐ centers vertically
   },
 
-  header: {
-    fontSize: 26,
+  /* Floating header */
+  floatingHeader: {
+    marginTop: 14,
+    marginHorizontal: 16,
+    borderRadius: 22,
+    height: 56,
+    paddingHorizontal: 16,
+
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+
+    backgroundColor: "rgba(255,255,255,0.95)",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+
+    elevation: 8,
+  },
+
+  footer: {
+    position: "absolute",
+    bottom: 16,
+    left: 20,
+    right: 20,
+
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.95)",
+
+    paddingVertical: 6,
+
+    elevation: 10,
+  },
+
+  headerTitle: {
+    fontSize: 20,
     fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 30,
+    letterSpacing: 0.5,
   },
 
   card: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 15,
-    elevation: 4,
-    marginBottom: 25,
+    borderRadius: 18,
+    marginVertical: 16,
+    elevation: 3,
+  },
+
+  buttonWrapper: {
+    marginTop: 10,
   },
 
   label: {
@@ -177,32 +257,18 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     color: "#2e86de",
-    marginTop: 5,
-  },
-
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 25,
+    marginTop: 6,
   },
 
   inputLabel: {
-    fontSize: 16,
+    fontWeight: "bold",
+    fontSize: 14,
+    marginBottom: 6,
   },
 
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    width: 80,
-    padding: 8,
-    textAlign: "center",
-    backgroundColor: "#fff",
-  },
-
-  buttonWrapper: {
-    borderRadius: 10,
-    overflow: "hidden",
+  contentCenter: {
+    justifyContent: "center",
+    flex: 1,
+    gap: 18,
   },
 });
