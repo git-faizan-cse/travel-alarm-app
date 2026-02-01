@@ -12,7 +12,7 @@ export const triggerAlarm = async () => {
       playThroughEarpieceAndroid: false,
     });
 
-    Vibration.vibrate([500, 500, 500, 500], true);
+    Vibration.vibrate([500, 500], true);
 
     const { sound: playback } = await Audio.Sound.createAsync(
       require("../../assets/sounds/alarm.mp3"),
