@@ -21,7 +21,7 @@ export default function MapScreen() {
   const confirmSelection = () => {
     if (!selectedLocation) return;
 
-    navigation.navigate("Home", {
+    navigation.navigate("Tracking", {
       destination: selectedLocation,
     });
   };
