@@ -48,8 +48,13 @@ export default function MapScreen() {
       </MapView>
 
       {selected && (
-        <Surface style={styles.confirmWrapper}>
-          <Button mode="contained" onPress={confirm}>
+        <Surface style={styles.confirmWrapper} elevation={8}>
+          <Button
+            mode="contained"
+            onPress={confirm}
+            icon="check"
+            contentStyle={{ height: 50 }}
+          >
             Confirm Destination
           </Button>
         </Surface>
@@ -74,5 +79,6 @@ const styles = StyleSheet.create({
     bottom: 120,
     alignSelf: "center",
     width: "85%",
+    borderRadius: 24,
   },
 });
