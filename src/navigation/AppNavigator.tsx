@@ -1,7 +1,8 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { IconButton } from "react-native-paper";
+import { IconButton, Text } from "react-native-paper";
+import { StyleSheet } from "react-native";
 
 import HomeScreen from "../screens/HomeScreen";
 import TrackingScreen from "../screens/TrackingScreen";
@@ -10,12 +11,25 @@ import MapScreen from "../screens/MapScreen";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-/* ------------------ Bottom Tabs ------------------ */
-function TabNavigator() {
+/* =================================================
+   TABS (with HEADER ⭐)
+================================================= */
+
+function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
+        /* ✅ ENABLE header */
+        headerShown: true,
+
+        headerTitleAlign: "center",
+
+        headerStyle: {
+          backgroundColor: "white",
+        },
+
+        headerTitle: () => <Text style={styles.title}>SleepEasy (faizan)</Text>,
+
         tabBarStyle: {
           height: 65,
           paddingBottom: 8,
@@ -46,17 +60,38 @@ function TabNavigator() {
   );
 }
 
-/* ------------------ Root Navigator ------------------ */
+/* =================================================
+   ROOT STACK
+================================================= */
+
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* Tabs stay alive */}
-        <Stack.Screen name="MainTabs" component={TabNavigator} />
+      <Stack.Navigator>
+        {/* Tabs */}
+        <Stack.Screen
+          name="MainTabs"
+          component={MainTabs}
+          options={{ headerShown: false }}
+        />
 
-        {/* Map opens above tabs */}
-        <Stack.Screen name="Map" component={MapScreen} />
+        {/* Map with native back button */}
+        <Stack.Screen
+          name="Map"
+          component={MapScreen}
+          options={{
+            title: "Select Destination",
+            headerBackTitleVisible: false,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+});
