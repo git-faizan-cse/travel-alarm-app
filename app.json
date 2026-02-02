@@ -10,14 +10,36 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.faizan.sleepeasy",
       "permissions": [
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
-      ]
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+
+        "SCHEDULE_EXACT_ALARM",
+        "WAKE_LOCK",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyB17auXIfjw7dHLXV9II52AN3Ano756lCo"
+        }
+      }
     },
+
+    // "android": {
+    //   "permissions": [
+    //     "android.permission.ACCESS_COARSE_LOCATION",
+    //     "android.permission.ACCESS_FINE_LOCATION",
+    //     "android.permission.ACCESS_BACKGROUND_LOCATION",
+    //     "android.permission.FOREGROUND_SERVICE",
+    //     "android.permission.FOREGROUND_SERVICE_LOCATION"
+    //   ],
+    //   "package": "com.faizan.sleepeasy"
+    // },
     "web": {
       "output": "single"
     },

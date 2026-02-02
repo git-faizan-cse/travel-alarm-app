@@ -1,4 +1,5 @@
 import { StyleSheet, View } from "react-native";
+
 import MapView, { Marker, Circle, MapPressEvent } from "react-native-maps";
 import { Surface, Button, IconButton } from "react-native-paper";
 import { useState, useEffect } from "react";
@@ -28,7 +29,6 @@ export default function MapScreen() {
         style={styles.back}
         onPress={() => navigation.goBack()}
       />
-
       <MapView
         style={styles.map}
         showsUserLocation

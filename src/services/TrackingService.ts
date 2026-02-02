@@ -2,7 +2,7 @@ import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Coordinates } from "../types/location";
 import { getDistance } from "../utils/distance";
-import { triggerAlarm } from "./AlarmService";
+import { triggerAlarm, stopAlarm } from "./AlarmService";
 
 /* ================= INTERNAL STATE ================= */
 
@@ -91,7 +91,7 @@ export const startTracking = async () => {
   subscription = await Location.watchPositionAsync(
     {
       accuracy: Location.Accuracy.High,
-      timeInterval: 3000,
+      timeInterval: 1000,
       distanceInterval: 5,
     },
     (loc) => {
@@ -130,6 +130,9 @@ export const stopTracking = () => {
 
   isTracking = false;
   wasInside = false;
+
+  /* ⭐ STOP alarm if playing */
+  stopAlarm();
 
   notifyStatus(false);
   notifyDistance(null);

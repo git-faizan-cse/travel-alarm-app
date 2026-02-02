@@ -64,18 +64,20 @@ export default function HomeScreen() {
     };
   }, []);
 
-  /* ================= LIGHTWEIGHT PREVIEW LOCATION ================= */
-
+  // for android phones as alarm was not working
   useEffect(() => {
     let sub: Location.LocationSubscription;
 
     const start = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") return;
+      const fg = await Location.requestForegroundPermissionsAsync();
+      if (fg.status !== "granted") return;
+
+      const bg = await Location.requestBackgroundPermissionsAsync();
+      if (bg.status !== "granted") return;
 
       sub = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.Low,
+          accuracy: Location.Accuracy.Balanced,
           timeInterval: 3000,
           distanceInterval: 3,
         },
@@ -88,6 +90,31 @@ export default function HomeScreen() {
     start();
     return () => sub?.remove();
   }, []);
+
+  /* ================= LIGHTWEIGHT PREVIEW LOCATION ================= */
+
+  // useEffect(() => {
+  //   let sub: Location.LocationSubscription;
+
+  //   const start = async () => {
+  //     const { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== "granted") return;
+
+  //     sub = await Location.watchPositionAsync(
+  //       {
+  //         accuracy: Location.Accuracy.Low,
+  //         timeInterval: 3000,
+  //         distanceInterval: 3,
+  //       },
+  //       (loc) => {
+  //         if (!getTrackingStatus()) setLocation(loc.coords);
+  //       },
+  //     );
+  //   };
+
+  //   start();
+  //   return () => sub?.remove();
+  // }, []);
 
   /* ================= TOGGLE ================= */
 
