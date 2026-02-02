@@ -1,13 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import MapView, { Marker, Circle } from "react-native-maps";
-import { getDestination } from "../services/TrackingService";
 import { Surface, Text, Button } from "react-native-paper";
 import { useEffect, useState } from "react";
-
-import Footer from "../components/Footer";
-import { Coordinates } from "../types/location";
-import { getDistance } from "../utils/distance";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
   startTracking,
@@ -15,74 +9,67 @@ import {
   getTrackingStatus,
   addLocationListener,
   addTrackingStatusListener,
+  addDistanceListener,
+  getDestination,
+  addDestinationListener,
 } from "../services/TrackingService";
-import { useRef } from "react";
+
+import { Coordinates } from "../types/location";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getAlertRadius } from "../services/TrackingService";
 
 export default function TrackingScreen() {
-  const destination = getDestination();
+  /* ==============================
+     STATE (UI only)
+  ============================== */
 
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [isTracking, setIsTracking] = useState(getTrackingStatus());
-  const [alertDistance, setAlertDistance] = useState("");
+
+  const [destination, setDestination] = useState(getDestination());
+
+  /* ==============================
+     LISTENERS FROM SERVICE
+  ============================== */
 
   useEffect(() => {
-    const unsubscribe = addLocationListener(setLocation);
+    const unsubLoc = addLocationListener(setLocation);
+    const unsubDist = addDistanceListener(setDistance);
+    const unsubStatus = addTrackingStatusListener(setIsTracking);
+    const unsubDest = addDestinationListener(setDestination);
 
-    return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = addTrackingStatusListener(setIsTracking);
-
-    return unsubscribe;
-  }, []);
-
-  /* ---------- calculate distance ---------- */
-  useEffect(() => {
-    if (!location || !destination) return;
-
-    const d = getDistance(
-      location.latitude,
-      location.longitude,
-      destination.latitude,
-      destination.longitude,
-    );
-
-    setDistance(d);
-  }, [location, destination]);
-
-  /* ---------- LOAD ALERT DISTANCE ---------- */
-  useEffect(() => {
-    const loadDistance = async () => {
-      const saved = await AsyncStorage.getItem("ALERT_DISTANCE");
-      setAlertDistance(saved || "0.5");
+    return () => {
+      unsubLoc();
+      unsubDist();
+      unsubStatus();
+      unsubDest();
     };
-
-    loadDistance();
   }, []);
 
-  /* ---------- start/stop toggle ---------- */
+  /* ==============================
+     TOGGLE
+  ============================== */
+
   const toggleTracking = async () => {
-    if (isTracking) {
-      stopTracking();
-      setDistance(null);
-    } else {
-      await startTracking();
-    }
+    if (isTracking) stopTracking();
+    else await startTracking();
   };
+
+  /* ==============================
+     UI
+  ============================== */
 
   return (
     <View style={styles.container}>
-      {/* 🔥 Fullscreen Map */}
+      {/* 🔥 Map */}
       <MapView style={styles.map} showsUserLocation>
         {destination && (
           <>
             <Marker coordinate={destination} />
-
             <Circle
               center={destination}
-              radius={500}
+              radius={getAlertRadius()}
               strokeColor="#2e86de"
               strokeWidth={2}
               fillColor="rgba(46,134,222,0.15)"
@@ -91,7 +78,7 @@ export default function TrackingScreen() {
         )}
       </MapView>
 
-      {/* 🔥 Floating Card */}
+      {/* 🔥 Card */}
       <Surface style={styles.card} elevation={8}>
         <Text style={styles.title}>📍 Tracking</Text>
 
@@ -110,8 +97,6 @@ export default function TrackingScreen() {
           {isTracking ? "Stop Tracking" : "Start Tracking"}
         </Button>
       </Surface>
-
-      {/* <Footer /> */}
     </View>
   );
 }

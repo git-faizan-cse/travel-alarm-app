@@ -1,174 +1,128 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button } from "react-native-paper";
-
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { triggerAlarm } from "../services/AlarmService";
-import { getDistance } from "../utils/distance";
-
-import { Coordinates } from "../types/location";
 
 import Layout from "../components/Layout";
 import DistanceInput from "../components/DistanceInput";
 import InfoCard from "../components/InfoCard";
+
 import {
   startTracking,
   stopTracking,
   getTrackingStatus,
   addLocationListener,
   addTrackingStatusListener,
+  addDistanceListener,
+  addDestinationListener,
+  getDestination,
+  setAlertDistance as setAlertDistanceService,
 } from "../services/TrackingService";
-import { setDestination, getDestination } from "../services/TrackingService";
-import * as Location from "expo-location";
+
+import { Coordinates } from "../types/location";
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+
+  /* ================= STATE ================= */
 
   const [location, setLocation] = useState<Coordinates | null>(null);
-  const [destination, setDestinationState] = useState(getDestination());
-
-  const [alertDistance, setAlertDistance] = useState("");
-  const [alarmTriggered, setAlarmTriggered] = useState(false);
-
-  const [errorMsg, setErrorMsg] = useState("");
+  const [distance, setDistance] = useState<number | null>(null);
   const [isTracking, setIsTracking] = useState(getTrackingStatus());
+  const [alertDistance, setAlertDistance] = useState("0.5");
+
+  // ⭐ immediate initial destination (important)
+  const [destination, setDestination] = useState<Coordinates | null>(
+    getDestination(),
+  );
+
+  /* ================= LOAD SAVED DISTANCE ================= */
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDestinationState(getDestination());
-    }, 300);
-
-    return () => clearInterval(interval);
+    AsyncStorage.getItem("ALERT_DISTANCE").then((v) => {
+      const val = v ?? "0.5";
+      setAlertDistance(val);
+      setAlertDistanceService(Number(val));
+    });
   }, []);
 
-  /* ---------- RESET ALARM WHEN TRACKING CHANGES ---------- */
-  useEffect(() => {
-    const unsubscribe = addLocationListener(setLocation);
+  /* ================= LISTENERS ================= */
 
-    return unsubscribe;
+  useEffect(() => addDestinationListener(setDestination), []);
+
+  useEffect(() => {
+    const unsubLoc = addLocationListener(setLocation);
+    const unsubDist = addDistanceListener(setDistance);
+    const unsubStatus = addTrackingStatusListener(setIsTracking);
+
+    return () => {
+      unsubLoc();
+      unsubDist();
+      unsubStatus();
+    };
   }, []);
 
-  useEffect(() => {
-    const unsubscribe = addTrackingStatusListener(setIsTracking);
-
-    return unsubscribe;
-  }, []);
-
-  /* ------------------ LIGHTWEIGHT LIVE LOCATION (Home only) ------------------ */
+  /* ================= LIGHTWEIGHT PREVIEW LOCATION ================= */
 
   useEffect(() => {
-    let subscription: Location.LocationSubscription;
+    let sub: Location.LocationSubscription;
 
-    const startLightTracking = async () => {
+    const start = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") return;
 
-      subscription = await Location.watchPositionAsync(
+      sub = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.Low, // ⭐ lighter than Balanced
-          timeInterval: 3000, // faster refresh
-          distanceInterval: 3, // update even small moves
+          accuracy: Location.Accuracy.Low,
+          timeInterval: 3000,
+          distanceInterval: 3,
         },
         (loc) => {
-          setLocation(loc.coords);
+          if (!getTrackingStatus()) setLocation(loc.coords);
         },
       );
     };
 
-    startLightTracking();
-
-    return () => subscription?.remove();
+    start();
+    return () => sub?.remove();
   }, []);
 
-  // useEffect(() => {
-  //   let subscription: Location.LocationSubscription;
-
-  //   const startLightTracking = async () => {
-  //     const { status } = await Location.requestForegroundPermissionsAsync();
-  //     if (status !== "granted") return;
-
-  //     subscription = await Location.watchPositionAsync(
-  //       {
-  //         accuracy: Location.Accuracy.Balanced, // ⭐ low battery
-  //         timeInterval: 10000, // every 10s
-  //         distanceInterval: 20, // or 20m
-  //       },
-  //       (loc) => {
-  //         // ONLY update if not tracking
-  //         if (!getTrackingStatus()) {
-  //           setLocation(loc.coords);
-  //         }
-  //       },
-  //     );
-  //   };
-
-  //   startLightTracking();
-
-  //   return () => {
-  //     subscription?.remove();
-  //   };
-  // }, []);
-
-  /* ------------------ LOAD SAVED DISTANCE ------------------ */
-  useEffect(() => {
-    const loadDistance = async () => {
-      const saved = await AsyncStorage.getItem("ALERT_DISTANCE");
-      setAlertDistance(saved || "0.5");
-    };
-
-    loadDistance();
-  }, []);
-
-  /* ------------------ ALARM LOGIC ------------------ */
-  useEffect(() => {
-    if (!location || !destination || alarmTriggered) return;
-
-    const distance = getDistance(
-      location.latitude,
-      location.longitude,
-      destination.latitude,
-      destination.longitude,
-    );
-
-    if (distance <= Number(alertDistance)) {
-      setAlarmTriggered(true);
-      triggerAlarm();
-    }
-  }, [location, destination]);
+  /* ================= TOGGLE ================= */
 
   const toggleTracking = async () => {
-    if (isTracking) {
-      stopTracking();
-      setAlarmTriggered(false);
-    } else {
-      setAlarmTriggered(false);
-      await startTracking();
-    }
+    if (isTracking) stopTracking();
+    else await startTracking();
   };
 
-  /* ------------------ UI ------------------ */
+  /* ================= UI ================= */
+
   return (
     <Layout>
       <View style={styles.contentCenter}>
-        {/* Distance Input */}
-        <DistanceInput value={alertDistance} onChange={setAlertDistance} />
+        <DistanceInput
+          value={alertDistance}
+          onChange={(v) => {
+            setAlertDistance(v);
+            setAlertDistanceService(Number(v));
+          }}
+        />
 
-        {/* Info Card */}
         <InfoCard
           location={location}
           destination={destination}
-          errorMsg={errorMsg}
+          distance={distance}
         />
 
         <Button
           mode="contained"
-          disabled={isTracking} // 🔒 lock while tracking
+          disabled={isTracking}
           onPress={() => navigation.navigate("Map")}
         >
           Select Destination
         </Button>
+
         <Button
           mode="contained"
           buttonColor={isTracking ? "#d32f2f" : "#2e7d32"}
@@ -182,8 +136,6 @@ export default function HomeScreen() {
     </Layout>
   );
 }
-
-/* ------------------ STYLES ------------------ */
 
 const styles = StyleSheet.create({
   contentCenter: {

@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { IconButton } from "react-native-paper";
+import { IconButton, Text } from "react-native-paper";
+import { View, StyleSheet } from "react-native";
 
 import HomeScreen from "../screens/HomeScreen";
 import TrackingScreen from "../screens/TrackingScreen";
@@ -10,7 +11,15 @@ export default function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
+        headerTitleAlign: "center",
+
+        /* ⭐ Native header style */
+        headerStyle: {
+          backgroundColor: "white",
+        },
+
+        headerTitle: () => <Text style={styles.title}>📍 Travel Alarm</Text>,
+
         tabBarStyle: {
           height: 65,
           paddingBottom: 8,
@@ -40,3 +49,10 @@ export default function TabNavigator() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+});

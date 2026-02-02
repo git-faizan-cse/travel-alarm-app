@@ -1,91 +1,78 @@
 import { StyleSheet, View } from "react-native";
 import MapView, { Marker, Circle, MapPressEvent } from "react-native-maps";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Surface, Button, IconButton } from "react-native-paper";
 import { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { Button, Surface } from "react-native-paper";
 
-import Footer from "../components/Footer";
-import { Coordinates } from "../types/location";
 import { setDestination } from "../services/TrackingService";
+import { getAlertRadius } from "../services/TrackingService";
+
+const DEFAULT_DISTANCE = 0.5;
 
 export default function MapScreen() {
   const navigation = useNavigation<any>();
-  const [selectedLocation, setSelectedLocation] = useState<Coordinates | null>(
-    null,
-  );
+  const [selected, setSelected] = useState(null);
+  const [radius, setRadius] = useState(DEFAULT_DISTANCE);
 
-  const handlePress = (event: MapPressEvent) => {
-    setSelectedLocation(event.nativeEvent.coordinate);
+  const confirm = () => {
+    if (!selected) return;
+    setDestination(selected);
+    navigation.goBack();
   };
-
-  const confirmSelection = () => {
-    if (!selectedLocation) return;
-
-    setDestination(selectedLocation); // ⭐ save globally
-    navigation.goBack(); // ⭐ close map
-  };
-
-  const [alertDistance, setAlertDistance] = useState(0.5);
-
-  useEffect(() => {
-    const loadDistance = async () => {
-      const saved = await AsyncStorage.getItem("ALERT_DISTANCE");
-      setAlertDistance(Number(saved || 0.5));
-    };
-
-    loadDistance();
-  }, []);
 
   return (
     <View style={styles.container}>
-      {/* Fullscreen Map */}
-      <MapView style={styles.map} showsUserLocation onPress={handlePress}>
-        {selectedLocation && (
-          <>
-            <Marker coordinate={selectedLocation} />
+      {/* ✅ back button */}
+      <IconButton
+        icon="arrow-left"
+        style={styles.back}
+        onPress={() => navigation.goBack()}
+      />
 
+      <MapView
+        style={styles.map}
+        showsUserLocation
+        onPress={(e: MapPressEvent) => setSelected(e.nativeEvent.coordinate)}
+      >
+        {selected && (
+          <>
+            <Marker coordinate={selected} />
             <Circle
-              center={selectedLocation}
-              radius={alertDistance * 1000}
+              center={selected}
+              radius={getAlertRadius()}
               strokeColor="#2e86de"
-              strokeWidth={2}
               fillColor="rgba(46,134,222,0.15)"
             />
           </>
         )}
       </MapView>
 
-      {/* 🔥 Floating Confirm Button */}
-      {selectedLocation && (
-        <Surface style={styles.confirmWrapper} elevation={8}>
-          <Button
-            mode="contained"
-            icon="check"
-            onPress={confirmSelection}
-            contentStyle={{ height: 50 }}
-          >
+      {selected && (
+        <Surface style={styles.confirmWrapper}>
+          <Button mode="contained" onPress={confirm}>
             Confirm Destination
           </Button>
         </Surface>
       )}
-
-      {/* Footer stays */}
-      {/* <Footer /> */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-
   map: { flex: 1 },
+
+  back: {
+    position: "absolute",
+    top: 40,
+    left: 10,
+    zIndex: 10,
+  },
 
   confirmWrapper: {
     position: "absolute",
-    bottom: 130, // above footer
+    bottom: 120,
     alignSelf: "center",
     width: "85%",
-    borderRadius: 24,
   },
 });
