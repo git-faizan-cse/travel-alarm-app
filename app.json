@@ -6,17 +6,21 @@
     "orientation": "portrait",
     "scheme": "travelalarmapp",
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "supportsTablet": true
     },
-
-    "android": {},
-
+    "android": {
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
+      ]
+    },
     "web": {
       "output": "single"
     },
-
     "plugins": [
       [
         "expo-location",
@@ -25,6 +29,11 @@
           "isIosBackgroundLocationEnabled": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "88bc6315-da47-4c68-9d32-7df259d08dc3"
+      }
+    }
   }
 }

@@ -28,7 +28,7 @@ function MainTabs() {
           backgroundColor: "white",
         },
 
-        headerTitle: () => <Text style={styles.title}>SleepEasy</Text>,
+        headerTitle: () => <Text style={styles.title}>SleepEasy (faizan)</Text>,
 
         tabBarStyle: {
           height: 65,
